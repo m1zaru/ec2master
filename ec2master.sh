@@ -27,10 +27,9 @@ for region in "${reg[@]}"; do
 	instance_id=$(grep -Po '(?<="InstanceId": ").*?(?=")' <<< "$run_instance"); security_group=$(grep -Po '(?<="GroupId": ").*?(?=")' <<< "$run_instance" | head -n 1)
 	aws ec2 authorize-security-group-ingress --region $region --group-id $security_group --protocol tcp --port 22 --cidr 0.0.0.0/0
 	if [ ! -z "$instance_id" ]; then
-	aws ec2 wait instance-status-ok --instance-ids $instance_id --region $region
+		aws ec2 wait instance-status-ok --instance-ids $instance_id --region $region
+		public_dns=$(aws ec2 describe-instances --instance-id $instance_id --region $region | grep PublicDnsName | head -n 1 | cut -d'"' -f4)
+		[ -z "$public_dns" ] && public_dns=$(aws ec2 describe-instances --instance-ids $instance_id --region $region | grep -oP '(?<="PublicIp": ").*?(?=")')
+		ssh -o StrictHostKeyChecking=no -i ~/ec2master.pem ubuntu@${public_dns} "command </dev/null >/dev/null 2>&1 &"
 	fi
-	public_dns=$(aws ec2 describe-instances --instance-id $instance_id --region $region | grep PublicDnsName | head -n 1 | cut -d'"' -f4)
-
-ssh -o StrictHostKeyChecking=no -i ~/ec2master.pem ubuntu@${public_dns} "command </dev/null >/dev/null 2>&1 &"
-
 done
