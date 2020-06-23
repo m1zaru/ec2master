@@ -3,6 +3,7 @@ set -o xtrace
 dos2unix $0
 
 if [ ! -f ~/ec2master.pem ]; then
+echo "creating ec2master key"
 ssh-keygen -b 2048 -t rsa -f ~/ec2master.pem -q -N ""
 chmod 400 ~/ec2master.pem
 fi
